@@ -1,0 +1,8 @@
+pypdf==5.0.0
+python-dotenv==1.0.1
+sentence-transformers
+chromadb
+requests
+google-generativeai
+pymupdf4llm
+rank_bm25

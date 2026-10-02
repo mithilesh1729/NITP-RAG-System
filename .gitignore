@@ -1,0 +1,22 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Data and Databases
+/data/*
+!/data/.keep
+/vector_db/*
+!/vector_db/.keep
+
+
+/vector_db_test/*
+!/vector_db_test/.keep
