@@ -1,15 +1,14 @@
-from src.embeddings.generator import LocalEmbedder
+from src.embeddings.generator import GeminiEmbedder
 from src.storage.vector_store import ChromaVectorStore
-from src.generation.llm import GeminiLLM, LocalLLM
+from src.generation.llm import GeminiLLM
 
 def start_chat():
     print("=== STARTING NIT PATNA ASSISTANT ===")
-    print("Loading database and models... (This is fast because we are NOT extracting PDFs!)")
+    print("Loading database and models...")
     
-    embedder = LocalEmbedder()
+    embedder = GeminiEmbedder()
     db = ChromaVectorStore()
-    # llm = LocalLLM(model_name="llama3")
-    llm = GeminiLLM() 
+    llm = GeminiLLM()
     
     print("\nSystem ready! Type 'exit' or 'quit' to stop.")
     
@@ -23,12 +22,13 @@ def start_chat():
         if not user_query.strip():
             continue
             
-        # 1. Embed the query (Fast)
+        # 1. Embed the query using Gemini
         query_vector = embedder.embed_text(user_query)
         
-        # 2. Retrieve relevant chunks from ChromaDB (Fast)
-        # results = db.search(query_embedding=query_vector, n_results=2)
-        results = db.search(query_embedding=query_vector, n_results=10)
+        # 2. Retrieve relevant chunks using HYBRID SEARCH (M.Tech feature)
+        # We can safely retrieve 10 chunks because Gemini Flash has a 1 MILLION token context window!
+        # This solves the issue of tables missing surrounding keywords (like 'Institute').
+        results = db.hybrid_search(query_text=user_query, query_embedding=query_vector, n_results=10)
         
         if not results['documents'] or len(results['documents'][0]) == 0:
             print("AI: I couldn't find any relevant information in the database.")
@@ -39,6 +39,11 @@ def start_chat():
         sources = set()
         for metadata in results['metadatas'][0]:
             sources.add(metadata.get('source', 'Unknown Document'))
+            
+        if 'hybrid_scores' in results:
+            print("\n[Hybrid Search Scoring]:")
+            for score_info in results['hybrid_scores'][0]:
+                print(f"  - {score_info}")
             
         # 4. Generate answer via LLM
         print("AI: Thinking...")
@@ -56,4 +61,3 @@ def start_chat():
 
 if __name__ == "__main__":
     start_chat()
-

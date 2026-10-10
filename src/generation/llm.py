@@ -67,7 +67,7 @@ class GeminiLLM:
         if not api_key:
             raise ValueError("GEMINI_API_KEY not found! Check your .env file.")
             
-        self.client = genai.Client(api_key=api_key)
+        self.client = genai.Client(api_key=api_key, http_options={'client_args': {'verify': False}})
         
     def generate_answer(self, query: str, context: str) -> str:
         prompt = f"""You are a helpful assistant for NIT Patna. 

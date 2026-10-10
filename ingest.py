@@ -1,16 +1,26 @@
 import os
 import glob
+import shutil
 from src.ingestion.local_parser import LocalPDFParser
 from src.processing.chunker import chunk_text
-from src.embeddings.generator import LocalEmbedder
+from src.embeddings.generator import GeminiEmbedder
 from src.storage.vector_store import ChromaVectorStore
 
 def ingest_all_documents(data_dir: str = "data"):
-    print("=== STARTING 100% LOCAL INGESTION PIPELINE ===")
+    print("=== STARTING CLOUD-EMBEDDING INGESTION PIPELINE ===")
     
+    db_path = "vector_db"
+    # if os.path.exists(db_path):
+    #     print("Clearing old vector database due to Embedding Model upgrade...")
+    #     try:
+    #         shutil.rmtree(db_path)
+    #     except PermissionError:
+    #         print("WARNING: Could not delete old database. Is chat.py running? Close it first!")
+    #         return
+            
     parser = LocalPDFParser()
-    embedder = LocalEmbedder()
-    db = ChromaVectorStore()
+    embedder = GeminiEmbedder()
+    db = ChromaVectorStore(persist_directory=db_path)
     
     # Find all PDFs in the data folder
     pdf_files = glob.glob(os.path.join(data_dir, "*.pdf"))
@@ -29,11 +39,13 @@ def ingest_all_documents(data_dir: str = "data"):
             continue
             
         # 2. Chunk
+        # Using 4000 chars so tables stay completely intact!
+        # Gemini Embedder can handle up to ~8000 chars without truncation.
         chunks = chunk_text(pages, chunk_size=4000, chunk_overlap=400)
         
         # 3. Embed
         texts_to_embed = [chunk["page_content"] for chunk in chunks]
-        print("Generating math vectors for chunks...")
+        print(f"Generating math vectors for {len(chunks)} chunks using Gemini API...")
         embeddings = embedder.embed_batch(texts_to_embed)
         
         # 4. Store
@@ -45,4 +57,3 @@ def ingest_all_documents(data_dir: str = "data"):
 
 if __name__ == "__main__":
     ingest_all_documents()
-

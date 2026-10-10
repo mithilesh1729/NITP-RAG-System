@@ -1,0 +1,484 @@
+\documentclass[11pt]{beamer}
+\usetheme{Madrid}
+\usefonttheme{serif}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amsfonts,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usepackage{xcolor}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric}
+
+\definecolor{implgreen}{RGB}{34, 139, 34}
+\definecolor{partialyellow}{RGB}{204, 153, 0}
+\definecolor{futurered}{RGB}{180, 60, 60}
+\definecolor{lightgreen}{RGB}{220, 245, 220}
+\definecolor{lightyellow}{RGB}{255, 250, 220}
+\definecolor{lightred}{RGB}{255, 225, 225}
+
+\setbeamertemplate{footline}{
+  \vbox{}
+  \begin{beamercolorbox}[wd=\paperwidth,ht=2.6ex,dp=1ex]{author in head/foot}
+    \centering\small Dept.\ of Computer Science, NIT Patna
+  \end{beamercolorbox}
+}
+\setbeamertemplate{navigation symbols}{}
+
+\title{NITP-RAG: A Retrieval-Augmented Generation System\\for NIT Patna Institutional Knowledge}
+\author{
+    \large \textbf{Mithilesh Kumar (2246022)}\\[-3pt]
+    \textbf{Tanishq Chowbey (2247001)}\\[4pt]
+    \small Under the supervision of\\
+    \textbf{Prof.\ M.P Singh}
+}
+\institute{\small Department of Computer Science and Engineering\\National Institute of Technology Patna}
+\date{October 6, 2026}
+
+\begin{document}
+
+% ============================================================
+% 1. TITLE PAGE
+% ============================================================
+\begin{frame}
+    \titlepage
+\end{frame}
+
+% ============================================================
+% 2. PRESENTATION OUTLINE
+% ============================================================
+\begin{frame}{Presentation Outline}
+    \tableofcontents
+\end{frame}
+
+% ============================================================
+% 3. MOTIVATION
+% ============================================================
+\section{Motivation}
+\begin{frame}{Motivation --- The Institutional Knowledge Problem}
+    \begin{itemize}
+        \item NIT Patna generates \textbf{hundreds of official documents} annually: fee notices, exam schedules, viva schedules, academic regulations, hostel rules, circulars.
+        \vspace{3pt}
+        \item Documents are \textbf{scattered} across the website, notice boards, WhatsApp groups, and physical boards.
+        \vspace{3pt}
+        \item Students spend significant time locating specific information.\\
+        \textit{E.g., ``What is the Medical Insurance Fee in 5th semester for Dual Degree?''}
+        \vspace{3pt}
+        \item Most notices are \textbf{scanned images}, not searchable digital text.
+        \vspace{3pt}
+        \item Information \textbf{changes across semesters}. Old policies get amended but not deleted.\\
+        \textit{E.g., A student admitted in 2024 changes department in 2025 --- which academic regulation applies?}
+    \end{itemize}
+\end{frame}
+
+% ============================================================
+% 4. WHY RAG? (Prompting vs Fine-Tuning vs RAG)
+% ============================================================
+\begin{frame}{Why RAG? --- Three Approaches to Using LLMs}
+    \begin{table}[h]
+    \centering
+    \small
+    \begin{tabular}{@{}p{2.2cm}p{3.2cm}p{4.2cm}@{}}
+        \toprule
+        \textbf{Approach} & \textbf{How It Works} & \textbf{Why It Fails for NITP}\\
+        \midrule
+        \textbf{Prompting} & Ask ChatGPT directly & Has zero knowledge of NITP internal documents. Hallucinates confidently.\\[6pt]
+        \textbf{Fine-Tuning} & Retrain model on NITP data & Extremely expensive. Must retrain every time a new notice is issued. Not scalable.\\[6pt]
+        \textbf{RAG} & Retrieve relevant docs first, then generate & \textcolor{implgreen}{\textbf{Best fit.}} New documents are simply added to the database. No retraining needed.\\
+        \bottomrule
+    \end{tabular}
+    \end{table}
+    \begin{block}{Why RAG Is the Right Category}
+        NITP documents change every semester. RAG allows the system to \textbf{stay current} by simply ingesting new documents --- no model retraining, no fine-tuning cost.
+    \end{block}
+\end{frame}
+
+% ============================================================
+% 5. INTRODUCTION --- What is RAG?
+% ============================================================
+\section{Introduction}
+\begin{frame}{Introduction --- What is RAG?}
+    \textbf{Retrieval-Augmented Generation (RAG):} Instead of asking an LLM to answer from memory, we first \textbf{retrieve} relevant passages from real documents, then ask the LLM to answer \textbf{only from those passages}.
+    \vspace{6pt}
+    \begin{center}
+    \resizebox{0.95\textwidth}{!}{
+    \begin{tikzpicture}[
+        node distance=0.4cm,
+        box/.style={rectangle, draw, rounded corners, minimum height=0.7cm, font=\scriptsize, align=center, fill=blue!8},
+        arr/.style={-{Stealth[length=2.5mm]}, thick}
+    ]
+        \node[box] (doc) {PDFs};
+        \node[box, right=of doc] (parse) {Extract};
+        \node[box, right=of parse] (chunk) {Chunk};
+        \node[box, right=of chunk] (embed) {Embed};
+        \node[box, right=of embed] (store) {Vector DB};
+        \node[box, right=of store] (retrieve) {Retrieve};
+        \node[box, right=of retrieve] (gen) {LLM Gen};
+        \draw[arr] (doc) -- (parse);
+        \draw[arr] (parse) -- (chunk);
+        \draw[arr] (chunk) -- (embed);
+        \draw[arr] (embed) -- (store);
+        \draw[arr] (store) -- (retrieve);
+        \draw[arr] (retrieve) -- (gen);
+    \end{tikzpicture}
+    }
+    \end{center}
+    \vspace{4pt}
+    \begin{itemize}
+        \item \textbf{Indexing Phase} (offline): Parse $\rightarrow$ Chunk $\rightarrow$ Embed $\rightarrow$ Store in vector database.
+        \item \textbf{Query Phase} (instant): Embed question $\rightarrow$ Find similar passages $\rightarrow$ Feed to LLM $\rightarrow$ Grounded answer.
+    \end{itemize}
+\end{frame}
+
+% ============================================================
+% 6. WHERE DOES BASIC RAG FAIL?
+% ============================================================
+\section{Where Basic RAG Fails}
+\begin{frame}{Where Does Basic RAG Fail?}
+    A naive ``put PDFs into a vector database'' approach breaks in institutional use:
+    \vspace{4pt}
+    \begin{enumerate}
+        \item \textbf{Dense Retrieval Is Not Enough}\\
+        \small ``MCA viva'' retrieves ``Mechanical Engg.\ viva'' --- semantic similarity misleads.
+        \vspace{3pt}
+        \item \textbf{Long Context / Lost in the Middle}\\
+        \small More context $\neq$ better answers. LLMs ignore middle portions of long inputs.
+        \vspace{3pt}
+        \item \textbf{Multi-Document Questions}\\
+        \small \textit{``Student admitted 2024, changed dept.\ 2025 --- which regulation applies?''}
+        \vspace{3pt}
+        \item \textbf{Scanned Image Documents}\\
+        \small Standard text extractors destroy table structure from scanned notices.
+        \vspace{3pt}
+        \item \textbf{No-Answer / Insufficient Evidence}\\
+        \small System must say ``I don't know'' instead of hallucinating.
+    \end{enumerate}
+\end{frame}
+
+% ============================================================
+% 7. INSTITUTIONAL-SPECIFIC CHALLENGES
+% ============================================================
+\begin{frame}{Challenges Specific to Institutional Knowledge}
+    \begin{enumerate}
+        \item \textbf{Current Policy vs.\ Historical Policy}\\
+        \small 2022 fee notice and 2024 fee notice both exist --- which is ``correct''?
+        \vspace{4pt}
+        \item \textbf{Policy Amendments}\\
+        \small Amendment modifies original regulation. System must understand:\\
+        \textit{Original + Amendment = Current Policy} (not treat as unrelated docs).
+        \vspace{4pt}
+        \item \textbf{Old Documents Must Be Retained}\\
+        \small Historical queries (``What was the fee in 2020?'') need old docs to remain.
+        \vspace{4pt}
+        \item \textbf{Hierarchical Information}\\
+        \small Institute $\rightarrow$ Dept $\rightarrow$ Programme $\rightarrow$ Semester $\rightarrow$ Subject.\\Flat retrieval ignores this structure entirely.
+        \vspace{4pt}
+        \item \textbf{Structured + Unstructured Data}\\
+        \small Fee tables (structured) and regulation text (unstructured) --- both must be handled.
+    \end{enumerate}
+\end{frame}
+
+% ============================================================
+% 8. PROBLEM STATEMENT & OBJECTIVES
+% ============================================================
+\section{Problem Statement \& Objectives}
+\begin{frame}{Problem Statement \& Objectives}
+    \textbf{Problem Statement:}
+    \begin{quote}
+        \textit{Design and evaluate a Retrieval-Augmented Generation system tailored for NIT Patna's institutional knowledge, capable of accurately answering questions from official documents --- including scanned notices, complex fee tables, and regulatory circulars --- with verifiable source citations.}
+    \end{quote}
+    \vspace{2pt}
+    \textbf{Objectives:}
+    \begin{enumerate}
+        \item Build a baseline RAG pipeline that ingests real NITP documents and answers factual queries.
+        \item Identify and categorize failure modes on institutional data.
+        \item Incrementally introduce targeted improvements --- one at a time --- and evaluate each.
+        \item Develop an evaluation framework covering retrieval, answer accuracy, citation, hallucination, no-answer, latency, and cost.
+    \end{enumerate}
+\end{frame}
+
+% ============================================================
+% 9. BASELINE ARCHITECTURE (IMAGE)
+% ============================================================
+\section{Proposed Method}
+\begin{frame}{Baseline RAG Architecture (Implemented)}
+    \begin{figure}
+        \centering
+        % Replace 'abc.png' with your architecture image filename
+        \includegraphics[width=0.85\textwidth]{abc.png}
+    \end{figure}
+    \vspace{-4pt}
+    \footnotesize
+    \begin{itemize}
+        \item Modular Python codebase: separate \texttt{ingest.py} (indexing) and \texttt{chat.py} (querying).
+        \item Model fallback: auto-switches between Gemini models on API failure (429/503/404).
+        \item Deterministic citations: source metadata extracted from DB, \textbf{not} generated by LLM.
+    \end{itemize}
+\end{frame}
+
+% ============================================================
+% 10. TECHNOLOGY STACK
+% ============================================================
+\begin{frame}{Technology Stack}
+    \begin{table}[h]
+    \centering
+    \small
+    \begin{tabular}{@{}p{2.5cm}p{3.5cm}p{3.8cm}@{}}
+        \toprule
+        \textbf{Component} & \textbf{Technology} & \textbf{Rationale}\\
+        \midrule
+        Document Parsing & Gemini Vision API / pymupdf4llm & Handles scanned images \& tables\\[3pt]
+        Chunking & Custom Python (4000 chars) & Preserves table integrity\\[3pt]
+        Embeddings & all-MiniLM-L6-v2 & 100\% local, no API dependency\\[3pt]
+        Vector Database & ChromaDB (local) & Lightweight, persistent storage\\[3pt]
+        LLM (Local) & Ollama + Llama-3 (8B) & Free, offline, private\\[3pt]
+        LLM (Cloud) & Gemini Flash & Superior tabular reasoning\\[3pt]
+        Language & Python 3.12 & Standard for ML/NLP\\
+        \bottomrule
+    \end{tabular}
+    \end{table}
+\end{frame}
+
+% ============================================================
+% 11. RESULTS --- WHAT WORKED
+% ============================================================
+\section{Experimental Results \& Analysis}
+\begin{frame}{Baseline Results --- Successful Queries}
+    Tested on real NIT Patna documents (fee notices, viva schedules):
+    \vspace{4pt}
+    \begin{table}[h]
+    \centering
+    \scriptsize
+    \begin{tabular}{@{}p{3.8cm}p{3.5cm}cc@{}}
+        \toprule
+        \textbf{Query} & \textbf{System Answer} & \textbf{Correct?} & \textbf{Source}\\
+        \midrule
+        ``Medical Insurance Fee in 5th Sem for Dual Degree?'' & Rs.\ 600.00 & \textcolor{implgreen}{\checkmark} & sample\_notice.pdf\\[3pt]
+        ``Faculty for DBMS viva, MCA DS\&I?'' & Mr.\ A.\ K.\ Titoriya, Dr.\ A.\ Sanober & \textcolor{implgreen}{\checkmark} & viva.pdf\\[3pt]
+        ``Total fee in Dual Degree collectively?'' & Rs.\ 1,34,900 (98,700 + 36,200) & \textcolor{implgreen}{\checkmark} & sample\_notice.pdf\\[3pt]
+        ``Name of the Institute?'' & NIT Patna & \textcolor{implgreen}{\checkmark} & Engineering.pdf\\
+        \bottomrule
+    \end{tabular}
+    \end{table}
+    \vspace{2pt}
+    \begin{block}{Observation}
+        The baseline answers factual queries, performs arithmetic over tables, and provides correct deterministic source citations.
+    \end{block}
+\end{frame}
+
+% ============================================================
+% 12. RESULTS --- FAILURE ANALYSIS
+% ============================================================
+\begin{frame}{Baseline Results --- Failure Analysis}
+    \begin{table}[h]
+    \centering
+    \scriptsize
+    \begin{tabular}{@{}p{2.2cm}p{3.2cm}p{1.6cm}p{2.8cm}@{}}
+        \toprule
+        \textbf{Failure} & \textbf{Root Cause} & \textbf{Status} & \textbf{Proposed Fix}\\
+        \midrule
+        Tables destroyed by chunking & 500-char chunks split headers from rows & Fixed (4000) & Semantic chunking\\[3pt]
+        LLM refuses valid queries & Llama-3 8B lacks table reasoning & Observed & Larger models or cloud fallback\\[3pt]
+        ``DS\&AI'' $\neq$ ``DS\&I'' & Abbreviation mismatch & Observed & Hybrid search + fuzzy matching\\[3pt]
+        No version awareness & Old and new notices coexist & Observed & Temporal metadata + recency\\
+        \bottomrule
+    \end{tabular}
+    \end{table}
+    \vspace{2pt}
+    \begin{alertblock}{Key Insight}
+        Simply putting PDFs into a vector database is \textbf{insufficient}. Each failure requires a targeted architectural improvement --- addressed \textbf{one at a time}.
+    \end{alertblock}
+\end{frame}
+
+% ============================================================
+% 13. PROPOSED COMPLETE ARCHITECTURE
+% ============================================================
+\begin{frame}{Proposed Complete Architecture}
+    \begin{center}
+    \resizebox{0.95\textwidth}{!}{
+    \begin{tikzpicture}[
+        node distance=0.25cm and 0.15cm,
+        box/.style={rectangle, draw, rounded corners=2pt, minimum height=0.5cm, minimum width=2cm, font=\tiny, align=center, thick},
+        impl/.style={box, fill=lightgreen, draw=implgreen},
+        partial/.style={box, fill=lightyellow, draw=partialyellow},
+        future/.style={box, fill=lightred, draw=futurered},
+        arr/.style={-{Stealth[length=1.8mm]}, thick, color=gray!60},
+    ]
+        \node[impl] (src) {NITP Official\\Sources};
+        \node[impl, below=of src] (ocr) {Image Processing\\OCR / Vision API};
+        \node[partial, below=of ocr] (clean) {Cleaning \&\\Structural Parsing};
+        \node[future, below=of clean] (meta) {Metadata +\\Document Hierarchy};
+        \node[future, below=of meta] (version) {Version / Temporal\\Information};
+
+        \node[impl, right=2.5cm of src] (chunk) {Semantic\\Chunking};
+        \node[impl, below=of chunk] (embed) {Embeddings};
+        \node[future, below=of embed] (hybrid) {Hybrid / Metadata\\Aware Retrieval};
+        \node[future, below=of hybrid] (rerank) {Cross-Encoder\\Re-Ranking};
+        \node[future, below=of rerank] (evidence) {Evidence\\Construction};
+
+        \node[impl, right=2.5cm of chunk] (llm) {LLM\\Generation};
+        \node[partial, below=of llm] (cite) {Citation \& Source\\Verification};
+        \node[future, below=of cite] (abstain) {Abstention /\\No-Answer Logic};
+        \node[future, below=of abstain] (ui) {User Interface\\/ API};
+        \node[future, below=of ui] (eval) {Evaluation \&\\Monitoring};
+
+        \draw[arr] (src) -- (ocr);
+        \draw[arr] (ocr) -- (clean);
+        \draw[arr] (clean) -- (meta);
+        \draw[arr] (meta) -- (version);
+        \draw[arr] (version.east) -- ++(0.3,0) |- (chunk.west);
+        \draw[arr] (chunk) -- (embed);
+        \draw[arr] (embed) -- (hybrid);
+        \draw[arr] (hybrid) -- (rerank);
+        \draw[arr] (rerank) -- (evidence);
+        \draw[arr] (evidence.east) -- ++(0.3,0) |- (llm.west);
+        \draw[arr] (llm) -- (cite);
+        \draw[arr] (cite) -- (abstain);
+        \draw[arr] (abstain) -- (ui);
+        \draw[arr] (ui) -- (eval);
+    \end{tikzpicture}
+    }
+    \end{center}
+    \begin{center}
+    \scriptsize
+    \colorbox{lightgreen}{\textcolor{implgreen}{\textbf{~~Implemented~~}}} \quad
+    \colorbox{lightyellow}{\textcolor{partialyellow}{\textbf{~~Partial~~}}} \quad
+    \colorbox{lightred}{\textcolor{futurered}{\textbf{~~Proposed~~}}}
+    \end{center}
+\end{frame}
+
+% ============================================================
+% 14. PROPOSED IMPROVEMENTS
+% ============================================================
+\begin{frame}{Proposed Improvements (Incremental, One at a Time)}
+    \begin{enumerate}
+        \item \textbf{Semantic / Structural Chunking}\\
+        \small Split at Markdown headers and table boundaries. Tables are never fragmented.
+        \vspace{4pt}
+        \item \textbf{Hybrid Search (BM25 + Dense Vectors)}\\
+        \small Keyword matching for exact codes + semantic similarity for natural queries.
+        \vspace{4pt}
+        \item \textbf{Cross-Encoder Re-Ranking}\\
+        \small Retrieve 50 candidates, re-score with a cross-encoder, select top-5.
+        \vspace{4pt}
+        \item \textbf{Metadata-Aware Retrieval}\\
+        \small Tag documents with department, year, type. Filter before ranking.
+        \vspace{4pt}
+        \item \textbf{Version / Temporal Awareness}\\
+        \small Original + Amendment = Current Policy. Recency weighting for latest notices.
+        \vspace{4pt}
+        \item \textbf{Reasoning Over Retrieved Evidence}\\
+        \small Multi-document inference at query time for cross-document questions.
+    \end{enumerate}
+\end{frame}
+
+% ============================================================
+% 15. EVALUATION FRAMEWORK
+% ============================================================
+\begin{frame}{Evaluation Framework}
+    \begin{table}[h]
+    \centering
+    \small
+    \begin{tabular}{@{}p{3.2cm}p{6.5cm}@{}}
+        \toprule
+        \textbf{Metric} & \textbf{What It Measures}\\
+        \midrule
+        Retrieval Accuracy & Are the correct passages retrieved? (Precision@k, MRR)\\[3pt]
+        Answer Accuracy & Does the answer match the ground truth?\\[3pt]
+        Version Accuracy & Does the system return the correct temporal version?\\[3pt]
+        Citation Correctness & Does the cited source actually contain the answer?\\[3pt]
+        Faithfulness & Is the answer fully supported by retrieved context?\\[3pt]
+        No-Answer Accuracy & Does the system correctly refuse when evidence is absent?\\[3pt]
+        Latency & Response time (wall-clock)\\[3pt]
+        Cost--Accuracy Tradeoff & Token usage vs.\ answer quality\\
+        \bottomrule
+    \end{tabular}
+    \end{table}
+\end{frame}
+
+% ============================================================
+% 16. RESEARCH METHODOLOGY
+% ============================================================
+\begin{frame}{Research Methodology --- Incremental Experimentation}
+    \begin{center}
+    \begin{tikzpicture}[
+        node distance=0.15cm,
+        step/.style={rectangle, draw, rounded corners=3pt, minimum height=0.6cm, minimum width=3cm, font=\scriptsize, align=center, thick},
+        arr/.style={-{Stealth[length=2mm]}, thick, color=gray!60},
+    ]
+        \node[step, fill=lightgreen] (s1) {Baseline RAG\\(Current)};
+        \node[step, fill=lightyellow, below=of s1] (s2) {+ Semantic Chunking};
+        \node[step, fill=lightyellow, below=of s2] (s3) {+ Hybrid Search};
+        \node[step, fill=lightred, below=of s3] (s4) {+ Re-Ranking};
+        \node[step, fill=lightred, below=of s4] (s5) {+ Metadata + Versioning};
+        \node[step, fill=lightred, below=of s5] (s6) {Complete NITP-RAG};
+        \draw[arr] (s1) -- (s2);
+        \draw[arr] (s2) -- (s3);
+        \draw[arr] (s3) -- (s4);
+        \draw[arr] (s4) -- (s5);
+        \draw[arr] (s5) -- (s6);
+        \node[right=0.6cm of s1, font=\tiny, text=gray] {Establish baseline metrics};
+        \node[right=0.6cm of s2, font=\tiny, text=gray] {Add one improvement};
+        \node[right=0.6cm of s3, font=\tiny, text=gray] {Re-evaluate all metrics};
+        \node[right=0.6cm of s4, font=\tiny, text=gray] {Measure delta};
+        \node[right=0.6cm of s5, font=\tiny, text=gray] {Analyze tradeoffs};
+        \node[right=0.6cm of s6, font=\tiny, text=gray] {Ablation study};
+    \end{tikzpicture}
+    \end{center}
+\end{frame}
+
+% ============================================================
+% 17. CONCLUSION & FUTURE WORK
+% ============================================================
+\section{Conclusion \& Future Work}
+\begin{frame}{Conclusion}
+    \textbf{Accomplished (Mid-Semester):}
+    \begin{itemize}
+        \item Identified a genuine institutional knowledge problem at NIT Patna.
+        \item Analyzed why Prompting and Fine-Tuning are insufficient --- RAG is the right paradigm.
+        \item Built and demonstrated a \textbf{working baseline RAG pipeline} on real NITP documents.
+        \item Critically analyzed failure modes: retrieval precision, table destruction, version conflicts, hallucination.
+        \item Designed a complete proposed architecture with incremental research methodology.
+    \end{itemize}
+    \vspace{4pt}
+    \textbf{Next Steps:}
+    \begin{itemize}
+        \item Implement semantic chunking and hybrid retrieval.
+        \item Build evaluation dataset (50--100 QA pairs from real NITP documents).
+        \item Add one improvement at a time. Evaluate after each. Measure tradeoffs.
+    \end{itemize}
+\end{frame}
+
+% ============================================================
+% 18. FUTURE WORK
+% ============================================================
+\begin{frame}{Future Work}
+    \begin{itemize}
+        \item \textbf{Image-based OCR:} Feed scanned notices as images directly. Explore Vision models and GAN-based text recognition for accurate extraction.
+        \vspace{4pt}
+        \item \textbf{Hierarchical Information:} Maintain document hierarchy (Institute $\rightarrow$ Department $\rightarrow$ Programme $\rightarrow$ Semester) for structured retrieval.
+        \vspace{4pt}
+        \item \textbf{Multi-language support:} Hindi + English bilingual notices.
+        \vspace{4pt}
+        \item \textbf{Real-time ingestion:} Auto-ingest new notices from the NITP website.
+        \vspace{4pt}
+        \item \textbf{Web interface:} Deploy as an institutional service for students and staff.
+    \end{itemize}
+\end{frame}
+
+% ============================================================
+% THANK YOU
+% ============================================================
+\begin{frame}
+    \centering
+    \Large Thank You!\\[15pt]
+    \small Department of Computer Science and Engineering\\
+    National Institute of Technology Patna\\[15pt]
+    \footnotesize
+    Project Repository: \url{https://github.com/mithilesh1729/NITP-RAG-System}
+\end{frame}
+
+\end{document}
