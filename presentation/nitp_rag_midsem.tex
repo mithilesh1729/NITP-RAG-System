@@ -224,32 +224,33 @@
     \begin{columns}[T]
         \begin{column}{0.48\textwidth}
             \begin{alertblock}{\textbf{Strategy A: Small Chunks (400 chars)}}
-                \scriptsize
-                \textbf{What happens:} Tables sliced horizontally.\\[2pt]
-                \textit{Chunk 1:} Headers (\texttt{|Category|Tuition|Medical|})\\[2pt]
-                \textit{Chunk 2:} Data (\texttt{|SC/ST|0|600|})\\[4pt]
-                \textbf{Fatal Failure:} Retrieving Chunk 2 gives ``0'' with zero context. Header separation destroys meaning.
+                \tiny
+                \textbf{The Trap:} Tables sliced horizontally into pieces.\\[2pt]
+                \textit{Chunk 1:} Headers (\texttt{|Category|Tuition|})\\
+                \textit{Chunk 2:} Values (\texttt{|SC/ST|0.00|})\\[3pt]
+                \textbf{Fatal Failure:} Retrieving ``0.00'' gives zero semantic meaning without column headers.
             \end{alertblock}
             \vspace{2pt}
             \begin{alertblock}{\textbf{Strategy B: Large Chunks (4000 chars)}}
-                \scriptsize
-                \textbf{What happens:} Full table preserved in 1 chunk.\\[2pt]
-                \textbf{Hidden Trap:} Local embeddings (\texttt{all-MiniLM-L6-v2}) have a hard \textbf{256-token limit}. They \textbf{silently truncate (drop)} the bottom 75\% of rows during vectorization!
+                \tiny
+                \textbf{The Goal:} Preserves entire table in 1 chunk.\\[2pt]
+                \textbf{Hidden Trap:} Local models (\texttt{all-MiniLM-L6-v2}) have a hard \textbf{256-token limit} ($\approx$1000 chars).\\[3pt]
+                \textbf{Silent Truncation:} Vectorizer silently discards the bottom 75\% of rows without error!
             \end{alertblock}
         \end{column}
         
         \begin{column}{0.48\textwidth}
-            \begin{block}{\textcolor{implgreen}{\textbf{\checkmark\ Our Production Solution}}}
+            \begin{block}{\textbf{\checkmark\ Our Production Solution}}
                 \scriptsize
-                \textbf{High-Capacity Cloud Embeddings:}\\[4pt]
+                \textbf{High-Capacity Cloud Embeddings:}\\[3pt]
                 Instead of complicated Parent-Child chunk indexing, we upgraded directly to \textbf{\texttt{gemini-embedding-2}}:\\[4pt]
-                \begin{itemize}
-                    \item \textbf{8,000-Token Capacity:} Natively maps full 4,000-character tables into vector space.
+                \begin{itemize}\setlength\itemsep{2pt}
+                    \item \textbf{8,000-Token Capacity:} Natively maps full 4,000-char tables into vector space.
                     \item \textbf{Zero Truncation:} 100\% of table rows and headers are vectorized.
                     \item \textbf{3072 Dimensions:} Rich semantic representation in ChromaDB.
                 \end{itemize}
-                \vspace{2pt}
-                \textit{Result: Multi-page timetables stay completely intact without fragmentation.}
+                \vspace{3pt}
+                \textit{\tiny Result: Multi-page timetables stay completely intact without fragmentation.}
             \end{block}
         \end{column}
     \end{columns}
