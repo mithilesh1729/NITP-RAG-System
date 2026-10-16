@@ -53,7 +53,8 @@ def start_chat():
         print("\n--- Answer ---")
         print(final_answer)
         
-        if "I don't know" not in final_answer:
+        is_refusal = final_answer.strip().startswith("I don't know") and len(final_answer.strip()) < 80
+        if not is_refusal:
             print("\n[Sources Used:]")
             for source in sources:
                 print(f"- {source}")

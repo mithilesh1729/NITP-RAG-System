@@ -70,10 +70,13 @@ class GeminiLLM:
         self.client = genai.Client(api_key=api_key, http_options={'client_args': {'verify': False}})
         
     def generate_answer(self, query: str, context: str) -> str:
-        prompt = f"""You are a helpful assistant for NIT Patna. 
+        prompt = f"""You are a helpful institutional assistant for NIT Patna. 
 Answer the user's question using ONLY the provided context below.
-If the answer is not contained in the context, say "I don't know based on the provided document".
-Do not use outside knowledge. Pay close attention to Markdown tables and column headers!
+Guidelines:
+1. Ground every statement strictly in the context. Do not invent facts or outside knowledge.
+2. In official NIT Patna circulars, standard unreserved students without fee concessions are categorized under "For other (Parent's income more than 5.00 Lakh)". Answer general category questions directly using these figures.
+3. If the answer is genuinely not contained in the context, say "I don't know based on the provided document".
+4. Pay close attention to Markdown tables, column headers, and fee breakdowns!
 
 Context:
 {context}
@@ -84,9 +87,9 @@ Answer:"""
         import time
         
         FALLBACK_MODELS = [
-            "gemini-3.6-flash",      # Switched 3.6 to primary to avoid 2.5 daily limit
-            "gemini-flash-latest",   # Generic pointer to latest available
-            "gemini-2.5-flash" 
+            "gemini-2.5-flash",
+            "gemini-3.5-flash-lite",
+            "gemini-flash-lite-latest"
         ]
         
         for model_name in FALLBACK_MODELS:

@@ -295,8 +295,9 @@ if user_query:
             # Display the answer
             st.markdown(answer)
             
-            # Display sources as badges (only if answer is not "I don't know")
-            if sources and "I don't know" not in answer:
+            # Display sources as badges (hide only if pure refusal without content)
+            is_pure_refusal = answer.strip().startswith("I don't know") and len(answer.strip()) < 80
+            if sources and not is_pure_refusal:
                 source_html = " ".join(
                     f'<span class="source-badge">📄 {s}</span>' for s in sources
                 )
@@ -315,7 +316,7 @@ if user_query:
             st.session_state.messages.append({
                 "role": "assistant",
                 "content": answer,
-                "sources": sources if "I don't know" not in answer else [],
+                "sources": sources if not is_pure_refusal else [],
                 "scores": scores,
                 "elapsed": elapsed
             })
