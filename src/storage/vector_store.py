@@ -86,23 +86,30 @@ class ChromaVectorStore:
             self.all_metadatas = all_data['metadatas']
             
             # Tokenize documents properly: remove HTML tags, punctuation, and STOPWORDS
-            def tokenize(text: str):
+            def tokenize(text: str, is_query: bool = False):
                 import re
                 clean_text = re.sub(r'[^a-zA-Z0-9\s]', ' ', text.lower())
                 tokens = clean_text.split()
-                stopwords = {"who", "is", "the", "of", "a", "an", "what", "where", "how", "in", "on", "at", "to", "for"}
-                return [t for t in tokens if t not in stopwords]
+                base_stopwords = {"who", "is", "the", "of", "a", "an", "what", "where", "how", "in", "on", "at", "to", "for"}
+                content_tokens = [t for t in tokens if t not in base_stopwords]
+                
+                # In query mode, filter out institutional boilerplate words if specific keywords exist
+                if is_query:
+                    domain_stopwords = {"nit", "patna", "institute"}
+                    filtered = [t for t in content_tokens if t not in domain_stopwords]
+                    return filtered if filtered else content_tokens
+                return content_tokens
                 
             self.tokenize_fn = tokenize
-            tokenized_corpus = [self.tokenize_fn(doc) for doc in self.all_docs]
+            tokenized_corpus = [self.tokenize_fn(doc, is_query=False) for doc in self.all_docs]
             self.bm25 = BM25Okapi(tokenized_corpus)
             
         # --- 2. Get BM25 (Keyword) Rankings ---
-        tokenized_query = self.tokenize_fn(query_text)
+        tokenized_query = self.tokenize_fn(query_text, is_query=True)
         bm25_scores = self.bm25.get_scores(tokenized_query)
         
-        # Get top 30 keyword matches
-        k_retrieve = min(30, len(self.all_ids))
+        # Candidate pool: up to 60 documents for comprehensive RRF fusion
+        k_retrieve = min(60, len(self.all_ids))
         bm25_top_indices = np.argsort(bm25_scores)[::-1][:k_retrieve]
         bm25_ids = [self.all_ids[i] for i in bm25_top_indices]
         

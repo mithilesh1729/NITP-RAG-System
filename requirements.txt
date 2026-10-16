@@ -6,3 +6,4 @@ requests
 google-generativeai
 pymupdf4llm
 rank_bm25
+streamlit

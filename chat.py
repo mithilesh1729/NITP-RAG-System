@@ -26,9 +26,9 @@ def start_chat():
         query_vector = embedder.embed_text(user_query)
         
         # 2. Retrieve relevant chunks using HYBRID SEARCH (M.Tech feature)
-        # We can safely retrieve 10 chunks because Gemini Flash has a 1 MILLION token context window!
-        # This solves the issue of tables missing surrounding keywords (like 'Institute').
-        results = db.hybrid_search(query_text=user_query, query_embedding=query_vector, n_results=10)
+        # We can safely retrieve 25 chunks because Gemini Flash has a 1 MILLION token context window!
+        # This solves table isolation and sub-table context vacuum issues.
+        results = db.hybrid_search(query_text=user_query, query_embedding=query_vector, n_results=25)
         
         if not results['documents'] or len(results['documents'][0]) == 0:
             print("AI: I couldn't find any relevant information in the database.")
