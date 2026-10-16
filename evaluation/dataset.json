@@ -1,0 +1,272 @@
+[
+  {
+    "id": "q01",
+    "category": "Exact Entity Match",
+    "query": "Who is director of NIT Patna?",
+    "target_source": "NIRF_Data_2026.pdf",
+    "target_keywords": ["Pradip Kumar Jain", "Director"],
+    "expected_answer": "Prof. Pradip Kumar Jain (Director / Vice Chancellor)",
+    "is_trap": false
+  },
+  {
+    "id": "q02",
+    "category": "Rare Indian Proper Noun",
+    "query": "Joining date of Gowrisankar Subramaniam",
+    "target_source": "NIRF_Data_2026.pdf",
+    "target_keywords": ["Gowrisankar", "18-10-2013"],
+    "expected_answer": "18-10-2013 (Associate Professor)",
+    "is_trap": false
+  },
+  {
+    "id": "q03",
+    "category": "Tabular Numeric Lookup",
+    "query": "Who is the faculty member with more than 500 months of experience?",
+    "target_source": "NIRF_Data_2026.pdf",
+    "target_keywords": ["Pradip Kumar Jain", "516"],
+    "expected_answer": "Pradip Kumar Jain with 516 months experience",
+    "is_trap": false
+  },
+  {
+    "id": "q04",
+    "category": "Multi-Column Schedule Filtering",
+    "query": "When is the first MSE for 3rd sem CSE-AI-DS?",
+    "target_source": "MSE July Dec 2026 Schedule _Reg.xlsx.pdf",
+    "target_keywords": ["Data Structures", "09-10-2026", "CS030201"],
+    "expected_answer": "Data Structures (CS030201) on 09-10-2026, Forenoon (FN: 10:00 AM to 12:00 N)",
+    "is_trap": false
+  },
+  {
+    "id": "q05",
+    "category": "Spatial Numeric Aggregation",
+    "query": "How many total Backlog students in B Tech-ME across schedule rows?",
+    "target_source": "MSE July Dec 2026 Schedule _Reg.xlsx.pdf",
+    "target_keywords": ["ME32101", "Backlog"],
+    "expected_answer": "4 Backlog students across the exam slots",
+    "is_trap": false
+  },
+  {
+    "id": "q06",
+    "category": "Timetable Procedural Details",
+    "query": "What is the reporting time for the morning examination session?",
+    "target_source": "MSE July Dec 2026 Schedule _Reg.xlsx.pdf",
+    "target_keywords": ["09:45 AM", "Reporting Time"],
+    "expected_answer": "09:45 AM (for Forenoon 10:00 AM session)",
+    "is_trap": false
+  },
+  {
+    "id": "q07",
+    "category": "Exact Entity Match",
+    "query": "What email address should students use to report schedule discrepancies?",
+    "target_source": "MSE July Dec 2026 Schedule _Reg.xlsx.pdf",
+    "target_keywords": ["examoffice@nitp.ac.in"],
+    "expected_answer": "examoffice@nitp.ac.in",
+    "is_trap": false
+  },
+  {
+    "id": "q08",
+    "category": "Policy & Category Fee Waiver",
+    "query": "What is the tuition fee for SC/ST students in B.Tech?",
+    "target_source": "Fee_structure.pdf",
+    "target_keywords": ["SC/ST/PH", "waiver"],
+    "expected_answer": "100% Tuition Fee Waiver (0 tuition fee)",
+    "is_trap": false
+  },
+  {
+    "id": "q09",
+    "category": "Income-Slab Fee Mapping",
+    "query": "What is the tuition fee for General category students with parent income above 5 Lakhs?",
+    "target_source": "Fee_structure.pdf",
+    "target_keywords": ["62,500", "5.00 Lakh"],
+    "expected_answer": "Rs. 62,500.00 per semester",
+    "is_trap": false
+  },
+  {
+    "id": "q10",
+    "category": "Income-Slab Fee Mapping",
+    "query": "What is the tuition fee discount for students with family income between 1 Lakh and 5 Lakhs?",
+    "target_source": "Fee_structure.pdf",
+    "target_keywords": ["Economically Backward", "5.00 Lakh"],
+    "expected_answer": "2/3rd (66.67%) remission of tuition fee",
+    "is_trap": false
+  },
+  {
+    "id": "q11",
+    "category": "Programme Fee Lookup",
+    "query": "What is the tuition fee for MCA Self-Financing programme per semester?",
+    "target_source": "FEE_MCA_SELF_FINANCE.pdf",
+    "target_keywords": ["1,25,000", "Tuition"],
+    "expected_answer": "Rs. 1,25,000 per semester",
+    "is_trap": false
+  },
+  {
+    "id": "q12",
+    "category": "Programme Fee Lookup",
+    "query": "What is Part B institutional fee at admission for MCA Regular?",
+    "target_source": "FEE_MCA_REGULAR.pdf",
+    "target_keywords": ["54,250", "Admission"],
+    "expected_answer": "Rs. 54,250 at admission / 1st semester",
+    "is_trap": false
+  },
+  {
+    "id": "q13",
+    "category": "Programme Fee Lookup",
+    "query": "What is the total fee payable at admission for M.Tech 1st semester in session 2024-25?",
+    "target_source": "FEE_PG_2024_25.pdf",
+    "target_keywords": ["89,250", "Admission"],
+    "expected_answer": "Rs. 89,250 (Grand Total A+B)",
+    "is_trap": false
+  },
+  {
+    "id": "q14",
+    "category": "Programme Fee Lookup",
+    "query": "What are the fee components and total payable at admission for Ph.D scholars?",
+    "target_source": "PhD_fee_Structure_29_07_2026.pdf",
+    "target_keywords": ["Ph.D", "Admission"],
+    "expected_answer": "Detailed breakdown under Part A and Part B for Ph.D admission",
+    "is_trap": false
+  },
+  {
+    "id": "q15",
+    "category": "Exact Entity Match",
+    "query": "Who is the Project Investigator for the JRF position in ECE?",
+    "target_source": "JRF_Advertisement_2026.pdf",
+    "target_keywords": ["Akash Agarwal", "Project Investigator"],
+    "expected_answer": "Dr. Akash Agarwal, Department of ECE, Bihta Campus",
+    "is_trap": false
+  },
+  {
+    "id": "q16",
+    "category": "Tabular Numeric Lookup",
+    "query": "What is the monthly fellowship stipend and HRA for the JRF position?",
+    "target_source": "JRF_Advertisement_2026.pdf",
+    "target_keywords": ["37,000", "18% HRA"],
+    "expected_answer": "Rs. 37,000 per month + 18% HRA",
+    "is_trap": false
+  },
+  {
+    "id": "q17",
+    "category": "Eligibility Condition Lookup",
+    "query": "What is the age limit for Junior Research Fellow application?",
+    "target_source": "JRF_Advertisement_2026.pdf",
+    "target_keywords": ["35 Years", "Age Limit"],
+    "expected_answer": "35 Years or below (with standard Govt. relaxations)",
+    "is_trap": false
+  },
+  {
+    "id": "q18",
+    "category": "Exact Entity Match",
+    "query": "Which funding agency is sponsoring the JRF maritime communication project?",
+    "target_source": "JRF_Advertisement_2026.pdf",
+    "target_keywords": ["ANRF", "SERB"],
+    "expected_answer": "ANRF / SERB under PMECRG program",
+    "is_trap": false
+  },
+  {
+    "id": "q19",
+    "category": "Academic Regulation Ordinance",
+    "query": "What is the minimum attendance percentage required to appear in examinations?",
+    "target_source": "UG Regulation 2022.pdf",
+    "target_keywords": ["75%", "attendance"],
+    "expected_answer": "75% of scheduled lectures, tutorials, and practicals",
+    "is_trap": false
+  },
+  {
+    "id": "q20",
+    "category": "Academic Regulation Ordinance",
+    "query": "What is the maximum attendance relaxation permitted on medical grounds?",
+    "target_source": "UG Regulation 2022.pdf",
+    "target_keywords": ["condonation", "attendance"],
+    "expected_answer": "Condonation/relaxation rules up to 15% under regulations",
+    "is_trap": false
+  },
+  {
+    "id": "q21",
+    "category": "Academic Regulation Ordinance",
+    "query": "What is the minimum CGPA required for change of branch in B.Tech?",
+    "target_source": "UG Regulation 2022.pdf",
+    "target_keywords": ["8.5", "change of branch"],
+    "expected_answer": "CGPA not lower than 8.5 for a change of branch",
+    "is_trap": false
+  },
+  {
+    "id": "q22",
+    "category": "Academic Regulation Ordinance",
+    "query": "What happens if a student misses the end semester examination on medical grounds?",
+    "target_source": "UG Regulation 2022.pdf",
+    "target_keywords": ["missed the end semester", "medical"],
+    "expected_answer": "Permitted to appear at Special examination but not considered for medals",
+    "is_trap": false
+  },
+  {
+    "id": "q23",
+    "category": "Academic Calendar Date",
+    "query": "What is the gazetted holiday on 2nd October in academic calendar?",
+    "target_source": "Holiday_Academic.pdf",
+    "target_keywords": ["Gandhi", "October"],
+    "expected_answer": "Mahatma Gandhi's Birthday (02 October)",
+    "is_trap": false
+  },
+  {
+    "id": "q24",
+    "category": "Institutional Statistics Lookup",
+    "query": "What is the sanctioned approved intake for UG engineering programs in NIRF?",
+    "target_source": "NIRF_Data_2026.pdf",
+    "target_keywords": ["Sanctioned", "Intake"],
+    "expected_answer": "Approved intake numbers listed under Sanctioned Intake table",
+    "is_trap": false
+  },
+  {
+    "id": "q25",
+    "category": "Comparative Multi-Document",
+    "query": "What is the 1st semester admission fee for M.Tech students?",
+    "target_source": "FEE_PG_2024_25.pdf",
+    "target_keywords": ["89,250", "Admission"],
+    "expected_answer": "M.Tech: Rs. 89,250",
+    "is_trap": false
+  },
+  {
+    "id": "q26",
+    "category": "Negative Guardrail (Trap)",
+    "query": "What is the procedure if a student misses Mid Sem Exam due to minor medical fever?",
+    "target_source": null,
+    "target_keywords": [],
+    "expected_answer": "I don't know based on the provided document.",
+    "is_trap": true
+  },
+  {
+    "id": "q27",
+    "category": "Negative Guardrail (Trap)",
+    "query": "Can a student show their mobile phone digital admit card to enter the exam hall?",
+    "target_source": null,
+    "target_keywords": [],
+    "expected_answer": "I don't know based on the provided document.",
+    "is_trap": true
+  },
+  {
+    "id": "q28",
+    "category": "Negative Guardrail (Trap)",
+    "query": "What is the hostel mess fee rebate calculation for a 15-day vacation leave?",
+    "target_source": null,
+    "target_keywords": [],
+    "expected_answer": "I don't know based on the provided document.",
+    "is_trap": true
+  },
+  {
+    "id": "q29",
+    "category": "Negative Guardrail (Trap)",
+    "query": "What is the swimming pool membership fee per semester for students?",
+    "target_source": null,
+    "target_keywords": [],
+    "expected_answer": "I don't know based on the provided document.",
+    "is_trap": true
+  },
+  {
+    "id": "q30",
+    "category": "Negative Guardrail (Trap)",
+    "query": "What is the tuition fee discount policy for international NRI students?",
+    "target_source": null,
+    "target_keywords": [],
+    "expected_answer": "I don't know based on the provided document.",
+    "is_trap": true
+  }
+]
