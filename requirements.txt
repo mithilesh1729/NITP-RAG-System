@@ -3,6 +3,7 @@ python-dotenv==1.0.1
 sentence-transformers
 chromadb
 requests
+google-genai
 google-generativeai
 pymupdf4llm
 rank_bm25
