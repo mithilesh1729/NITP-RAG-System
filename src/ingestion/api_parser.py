@@ -28,11 +28,18 @@ class VisionAPIParser:
     """
     
     def __init__(self):
-        # Load the API key from the .env file
+        # Load the API key from the .env file or Streamlit Secrets
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
+            try:
+                import streamlit as st
+                api_key = st.secrets.get("GEMINI_API_KEY")
+            except Exception:
+                pass
+
+        if not api_key:
             raise ValueError(
-                "CRITICAL ERROR: GEMINI_API_KEY is missing in your .env file!\n"
+                "CRITICAL ERROR: GEMINI_API_KEY is missing in your .env file or Streamlit Secrets!\n"
                 "Please get one at aistudio.google.com/app/apikey"
             )
         

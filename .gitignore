@@ -12,11 +12,7 @@ __pycache__/
 *.so
 
 # Data and Databases
-/data/*
-!/data/.keep
-/vector_db/*
-!/vector_db/.keep
-
-
+/data/crawled/*
+/data/chroma_store/*
 /vector_db_test/*
 !/vector_db_test/.keep

@@ -46,7 +46,14 @@ class GeminiEmbedder(BaseEmbedder):
         load_dotenv()
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
-            raise ValueError("GEMINI_API_KEY not found! Check your .env file.")
+            try:
+                import streamlit as st
+                api_key = st.secrets.get("GEMINI_API_KEY")
+            except Exception:
+                pass
+                
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY not found! Check your .env file or Streamlit Secrets.")
             
         self.client = genai.Client(api_key=api_key, http_options={'client_args': {'verify': False}})
         self.model = 'gemini-embedding-2'
