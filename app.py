@@ -7,6 +7,7 @@ Run with: streamlit run app.py
 """
 import streamlit as st
 import time
+from src.crawler.spider import CategorySpider, UniversalSpider
 
 # ============================================================
 # Page Configuration (must be first Streamlit call)
@@ -172,6 +173,120 @@ with st.sidebar:
     except Exception as e:
         st.error(f"❌ Pipeline Error: {e}")
         st.stop()
+    
+    st.divider()
+
+    # ============================================================
+    # Live Web Crawler & Ingestion Panel
+    # ============================================================
+    with st.expander("🕷️ Live Web Crawler & Ingest", expanded=False):
+        st.caption("Auto-discover, download, and index PDFs from any webpage, notice board, or syllabus endpoint.")
+        
+        endpoint_options = [
+            "📢 All Notices Feed (NITP)",
+            "🎪 Events & Workshop Circulars",
+            "🎓 Academic Notices Feed",
+            "📚 Department Syllabus (Webpage)",
+            "📁 Direct Google Drive / Docs Link",
+            "Custom URL..."
+        ]
+        
+        url_preset_map = {
+            "📢 All Notices Feed (NITP)": "https://www.nitp.ac.in/Notices/All",
+            "🎪 Events & Workshop Circulars": "https://www.nitp.ac.in/Notices/Events",
+            "🎓 Academic Notices Feed": "https://www.nitp.ac.in/Notices/Academic",
+            "📚 Department Syllabus (Webpage)": "https://www.nitp.ac.in/Department/CSE/syllabus/btech-ai-ds",
+            "📁 Direct Google Drive / Docs Link": "https://drive.google.com/file/d/14IFke4roJfAJUD5jRTeBfLl-vGjefz3u/view",
+        }
+        
+        selected_preset = st.selectbox("Quick Select Category Endpoint", endpoint_options, index=0)
+        default_val = url_preset_map.get(selected_preset, "") if selected_preset != "Custom URL..." else ""
+        
+        crawler_url = st.text_input(
+            "Target Endpoint URL", 
+            value=default_val, 
+            placeholder="https://www.nitp.ac.in/... or https://drive.google.com/..."
+        )
+
+        # Category classifier & intelligent parameter adaptation
+        spider_preview = CategorySpider()
+        detected_cat = spider_preview.classify_endpoint(crawler_url.strip()) if crawler_url.strip() else "NOTICE"
+        
+        category_badge_map = {
+            "NOTICE": "📢 **Category: Notice Feed** (API: `admin.nitp.ac.in/api/notice`)",
+            "EVENT": "🎪 **Category: Events & Circulars** (API: `admin.nitp.ac.in/api/events`)",
+            "SYLLABUS": "📚 **Category: Department Syllabus Webpage** (Auto-discovers course Google Drive PDFs)",
+            "GDRIVE_SYLLABUS": "📁 **Category: Direct Google Drive / Docs Document** (Auto-Export to PDF)",
+            "DIRECT_PDF": "📄 **Category: Direct PDF Target** (Direct binary download)",
+            "GENERIC_HTML": "🌐 **Category: Generic Webpage Scraper** (Discovers all PDF links in HTML)"
+        }
+        st.markdown(category_badge_map.get(detected_cat, "🌐 **Category: Standard**"))
+        
+        col_c1, col_c2 = st.columns(2)
+        if detected_cat == "NOTICE":
+            with col_c1:
+                crawl_days = st.number_input("Lookback Days", min_value=1, max_value=60, value=4, help="Fetch circulars uploaded in the last N days")
+            with col_c2:
+                crawl_max = st.number_input("Max Files", min_value=1, max_value=20, value=5, help="Cap on downloaded circulars")
+        elif detected_cat == "EVENT":
+            with col_c1:
+                crawl_days = st.number_input("Lookback Days", min_value=7, max_value=365, value=90, help="Events are published periodically; 90-180 days lookback recommended")
+            with col_c2:
+                crawl_max = st.number_input("Max Files", min_value=1, max_value=20, value=5, help="Cap on downloaded event circulars")
+        elif detected_cat == "SYLLABUS":
+            with col_c1:
+                st.info("📅 **Date Filter:** Not applicable\n*(Curriculum is permanent)*")
+                crawl_days = 0
+            with col_c2:
+                crawl_max = st.number_input("Max Courses", min_value=1, max_value=20, value=5, help="Number of course PDFs to scrape")
+        elif detected_cat in ["GDRIVE_SYLLABUS", "DIRECT_PDF"]:
+            with col_c1:
+                st.info("📅 **Date Filter:** Not applicable\n*(Single document target)*")
+                crawl_days = 0
+            with col_c2:
+                st.text_input("Target Mode", value="Single File (Auto-Ingest)", disabled=True)
+                crawl_max = 1
+        else:  # GENERIC_HTML
+            with col_c1:
+                st.info("📅 **Date Filter:** Not applicable\n*(Static webpage links)*")
+                crawl_days = 0
+            with col_c2:
+                crawl_max = st.number_input("Max Files", min_value=1, max_value=20, value=5, help="Cap on discovered PDFs")
+            
+        if st.button("🚀 Crawl & Ingest", use_container_width=True, type="primary"):
+            if not crawler_url.strip():
+                st.warning("Please enter or select a valid URL.")
+            else:
+                with st.spinner("🕷️ Crawling, downloading, and indexing documents..."):
+                    try:
+                        from crawl_and_ingest import crawl_and_ingest
+                        result = crawl_and_ingest(
+                            crawler_url.strip(), 
+                            days=int(crawl_days), 
+                            max_files=int(crawl_max)
+                        )
+                        st.cache_resource.clear()
+                        
+                        if result and result.get("status") == "up_to_date":
+                            st.info("ℹ️ All PDFs on this page are already indexed. No new downloads needed.")
+                        elif result and result.get("new_chunks_count", 0) > 0:
+                            st.success(f"✅ Indexed {result['processed_count']} new PDF(s) ({result['new_chunks_count']} chunks)!")
+                            for fn in result.get("files", []):
+                                st.caption(f"📄 {fn}")
+                            st.rerun()
+                        else:
+                            st.warning("No new indexable PDF content found at this endpoint.")
+                    except Exception as err:
+                        st.error(f"Crawling failed: {err}")
+        
+        st.write("")
+        if st.button("🧹 Reset Crawled Data to Baseline", use_container_width=True, help="Removes all crawled/tested files and reverts database to the 76 baseline chunks."):
+            with st.spinner("Resetting to baseline..."):
+                from reset_crawled_data import reset as reset_data
+                reset_data()
+                st.cache_resource.clear()
+                st.success("Clean reset complete! Database reverted to 76 baseline chunks.")
+                st.rerun()
     
     st.divider()
     st.caption("Built by **Mithilesh Kumar** (2246022)")
